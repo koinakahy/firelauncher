@@ -53,6 +53,10 @@ dependencies {
 
 //     implementation project(':Bcore')
 
+    // Runtime libraries the Bcore engine needs but does not bundle
+    implementation 'com.github.CodingGay.BlackReflection:core:1.0.9'
+    implementation 'com.github.tiann:FreeReflection:3.1.0'
+
     implementation libs.appcompat
     implementation libs.material
     implementation libs.constraintlayout
