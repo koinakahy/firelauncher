@@ -44,11 +44,22 @@ class LauncherActivity : AppCompatActivity() {
         override fun run() { renderMembership(); ui.postDelayed(this, 1000) }
     }
 
-    /** Stable per-device id, hashed so the raw ANDROID_ID is never sent. */
+    /**
+     * Stable per-install id, hashed. Settings.Secure.ANDROID_ID is NOT read directly any more: the
+     * BlackBox core spoofs the calling uid inside this process, so the system rejects that call with
+     * "Calling uid ... doesn't match source uid" and the activity crashed on start.
+     * The id is created once (ANDROID_ID if it works, otherwise random) and then saved.
+     */
     private val deviceId: String by lazy {
-        val raw = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown"
-        MessageDigest.getInstance("SHA-256").digest(("fire:$raw").toByteArray())
-            .joinToString("") { "%02x".format(it) }.take(32)
+        val sp = getSharedPreferences("fire_device", Context.MODE_PRIVATE)
+        sp.getString("id", null) ?: run {
+            val raw = try { Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID) } catch (_: Throwable) { null }
+                ?: java.util.UUID.randomUUID().toString()
+            val id = MessageDigest.getInstance("SHA-256").digest(("fire:$raw").toByteArray())
+                .joinToString("") { "%02x".format(it) }.take(32)
+            sp.edit().putString("id", id).apply()
+            id
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
