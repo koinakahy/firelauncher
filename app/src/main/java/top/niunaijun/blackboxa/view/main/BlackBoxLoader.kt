@@ -206,17 +206,14 @@ class BlackBoxLoader {
                     }
                 }
             })
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in attachBaseContext: ${e.message}")
+        } catch (e: Throwable) {
+            Log.e(TAG, "Error in attachBaseContext", e)
         }
     }
 
+    /** Errors are reported by AppManager (it records them so the UI can show why the engine is down). */
     fun doOnCreate(context: Context) {
-        try {
-            BlackBoxCore.get().doCreate()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in doOnCreate: ${e.message}")
-        }
+        BlackBoxCore.get().doCreate()
     }
 
     companion object {

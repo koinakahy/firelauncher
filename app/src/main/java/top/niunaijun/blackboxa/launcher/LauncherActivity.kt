@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
@@ -34,7 +35,8 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var b: ActivityLauncherBinding
     private lateinit var store: LicenseStore
     private val client = KeyClient()
-    private val io = Executors.newSingleThreadExecutor()
+    private val io = Executors.newSingleThreadExecutor()     // network (key validation)
+    private val eng = Executors.newSingleThreadExecutor()    // engine / IPC work, never on the UI thread
     private val ui = Handler(Looper.getMainLooper())
     private val cards = mutableMapOf<String, View>()
 
@@ -68,10 +70,16 @@ class LauncherActivity : AppCompatActivity() {
         setupSeller()
         setupSettings()
         refreshLocks()
+        watchEngine()
     }
 
     override fun onResume() { super.onResume(); ui.post(ticker); refreshCards() }
     override fun onPause() { super.onPause(); ui.removeCallbacks(ticker) }
+    override fun onDestroy() {
+        super.onDestroy()
+        ui.removeCallbacksAndMessages(null)
+        io.shutdown(); eng.shutdown()
+    }
 
     // ---------------------------------------------------------------- Games
     private fun buildGameCards() {
@@ -171,21 +179,29 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun startGame(g: LauncherConfig.Game) {
         val pd = ProgressDialog(this).apply { setMessage("Launching ${g.title}..."); setCancelable(false); show() }
-        io.execute {
+        eng.execute {
+            var err: String? = Engine.abiProblem(this, g.pkg)
             var ok = false
-            var err = ""
-            try {
-                val core = BlackBoxCore.get()
-                val u = LauncherConfig.VIRTUAL_USER
-                if (!core.isInstalled(g.pkg, u)) {
-                    val res = core.installPackageAsUser(g.pkg, u)
-                    if (!res.success) err = res.msg ?: "Install into virtual space failed"
+            if (err == null) err = Engine.ensureReady()
+            if (err == null) {
+                try {
+                    val u = LauncherConfig.VIRTUAL_USER
+                    err = Engine.installIntoVirtual(g.pkg, u)
+                    if (err == null) {
+                        ok = BlackBoxCore.get().launchApk(g.pkg, u)
+                        if (!ok) err = "The game was added but could not be started (no launch activity found)."
+                    }
+                } catch (e: Throwable) {
+                    err = "Launch error: ${e.javaClass.simpleName}: ${e.message}"
                 }
-                if (err.isEmpty()) ok = core.launchApk(g.pkg, u)
-            } catch (e: Throwable) { err = e.message ?: "Launch error" }
+            }
             ui.post {
                 runCatching { pd.dismiss() }
-                if (ok) onGameLaunched() else toast(err.ifEmpty { "Could not launch ${g.title}" })
+                if (isFinishing) return@post
+                if (ok) onGameLaunched()
+                else dialog().setTitle("Could not launch ${g.title}")
+                    .setMessage(err ?: "Unknown error")
+                    .setPositiveButton("OK", null).show()
             }
         }
     }
@@ -245,6 +261,7 @@ class LauncherActivity : AppCompatActivity() {
             toast("Device ID copied")
         }
         b.btnGoogle.setOnClickListener { toggleGoogle() }
+        b.btnEngineCheck.setOnClickListener { runEngineCheck() }
         b.btnOverlay.setOnClickListener {
             if (Settings.canDrawOverlays(this)) toast("Overlay permission already granted")
             else startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
@@ -253,21 +270,75 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun updateGoogleButton() {
-        val on = runCatching { BlackBoxCore.get().isInstallGms(LauncherConfig.VIRTUAL_USER) }.getOrDefault(false)
-        b.btnGoogle.text = if (on) "Remove Google login" else "Add Google login"
-        b.tvGoogleState.text = if (on) "Google services installed in the virtual space" else "Needed to sign in to games with Google"
+        b.btnGoogle.isEnabled = false
+        b.tvGoogleState.text = "Checking..."
+        eng.execute {
+            val ready = Engine.ensureReady(15_000) == null
+            val on = ready && runCatching { BlackBoxCore.get().isInstallGms(LauncherConfig.VIRTUAL_USER) }.getOrDefault(false)
+            ui.post {
+                if (isFinishing) return@post
+                b.btnGoogle.isEnabled = ready
+                b.btnGoogle.text = if (on) "Remove Google login" else "Add Google login"
+                b.tvGoogleState.text = when {
+                    !ready -> "Engine is not ready yet - see Engine status below"
+                    on -> "Google services installed in the virtual space"
+                    else -> "Needed to sign in to games with Google"
+                }
+            }
+        }
     }
 
     private fun toggleGoogle() {
         val u = LauncherConfig.VIRTUAL_USER
         val pd = ProgressDialog(this).apply { setMessage("Please wait..."); setCancelable(false); show() }
-        io.execute {
+        eng.execute {
             val msg = try {
-                val core = BlackBoxCore.get()
-                if (core.isInstallGms(u)) { if (core.uninstallGms(u)) "Google services removed" else "Remove failed" }
-                else { val r = core.installGms(u); if (r.success) "Google services installed" else "Failed: ${r.msg}" }
+                val notReady = Engine.ensureReady()
+                if (notReady != null) notReady else {
+                    val core = BlackBoxCore.get()
+                    if (core.isInstallGms(u)) { if (core.uninstallGms(u)) "Google services removed" else "Remove failed" }
+                    else { val r = core.installGms(u); if (r != null && r.success) "Google services installed" else "Failed: ${r?.msg}" }
+                }
             } catch (e: Throwable) { "Error: ${e.message}" }
-            ui.post { runCatching { pd.dismiss() }; toast(msg); updateGoogleButton() }
+            ui.post { runCatching { pd.dismiss() }; if (!isFinishing) { toast(msg); updateGoogleButton() } }
+        }
+    }
+
+    // --------------------------------------------------------------- Engine
+    /** Shows live engine state at the bottom of Settings; also warms the engine in the background. */
+    private fun watchEngine() {
+        b.tvEngineState.text = "Starting..."
+        eng.execute {
+            val err = Engine.ensureReady(40_000)
+            ui.post {
+                if (isFinishing) return@post
+                b.tvEngineState.text = err ?: "Ready"
+                b.tvEngineState.setTextColor(if (err == null) 0xFF6BD66B.toInt() else 0xFFFF6B5E.toInt())
+            }
+        }
+    }
+
+    private fun runEngineCheck() {
+        val pd = ProgressDialog(this).apply { setMessage("Checking engine..."); setCancelable(false); show() }
+        eng.execute {
+            val text = try { Engine.report(this) } catch (e: Throwable) { "Report failed: ${Log.getStackTraceString(e)}" }
+            ui.post {
+                runCatching { pd.dismiss() }
+                if (isFinishing) return@post
+                val tv = TextView(this).apply {
+                    this.text = text; setTextIsSelectable(true); textSize = 11f
+                    setTextColor(0xFFFFFFFF.toInt()); typeface = android.graphics.Typeface.MONOSPACE
+                    val pad = (16 * resources.displayMetrics.density).toInt(); setPadding(pad, pad / 2, pad, 0)
+                }
+                dialog().setTitle("Engine check")
+                    .setView(android.widget.ScrollView(this).apply { addView(tv) })
+                    .setPositiveButton("Copy") { _, _ ->
+                        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                            .setPrimaryClip(ClipData.newPlainText("engine", text))
+                        toast("Copied")
+                    }
+                    .setNegativeButton("Close", null).show()
+            }
         }
     }
 

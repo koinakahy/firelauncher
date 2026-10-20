@@ -15,6 +15,7 @@ import top.niunaijun.blackbox.BlackBoxCore
 class App : Application() {
 
     companion object {
+        private const val TAG = "App"
 
         @SuppressLint("StaticFieldLeak")
         @Volatile
@@ -26,67 +27,33 @@ class App : Application() {
         }
     }
 
-    private fun installCrashRecorder(base: Context?) {
+    private inline fun guarded(what: String, block: () -> Unit) {
         try {
-            val dir = base?.filesDir ?: return
-            val prev = Thread.getDefaultUncaughtExceptionHandler()
-            Thread.setDefaultUncaughtExceptionHandler { t, e ->
-                try {
-                    java.io.File(dir, "crash.txt").writeText(
-                        "Thread: ${t.name}\n" + Log.getStackTraceString(e)
-                    )
-                } catch (_: Throwable) { }
-                prev?.uncaughtException(t, e)
-            }
-        } catch (_: Throwable) { }
+            block()
+        } catch (t: Throwable) {   // Throwable on purpose: linkage errors must not kill start-up
+            Log.e(TAG, "Error in $what", t)
+        }
     }
 
     override fun attachBaseContext(base: Context?) {
-        try {
-            super.attachBaseContext(base)
-            installCrashRecorder(base)
+        super.attachBaseContext(base)
+        if (base == null) return
+        mContext = base
 
-            // Initialize BlackBoxCore with error handling
-            try {
-                BlackBoxCore.get().closeCodeInit()
-            } catch (e: Exception) {
-                Log.e("App", "Error in closeCodeInit: ${e.message}")
-            }
+        CrashRecorder.install(base)
 
-            try {
-                BlackBoxCore.get().onBeforeMainApplicationAttach(this, base)
-            } catch (e: Exception) {
-                Log.e("App", "Error in onBeforeMainApplicationAttach: ${e.message}")
-            }
+        guarded("closeCodeInit") { BlackBoxCore.get().closeCodeInit() }
+        guarded("onBeforeMainApplicationAttach") { BlackBoxCore.get().onBeforeMainApplicationAttach(this, base) }
+        AppManager.doAttachBaseContext(base)
+        guarded("onAfterMainApplicationAttach") { BlackBoxCore.get().onAfterMainApplicationAttach(this, base) }
 
-            mContext = base!!
-            
-            try {
-                AppManager.doAttachBaseContext(base)
-            } catch (e: Exception) {
-                Log.e("App", "Error in doAttachBaseContext: ${e.message}")
-            }
-
-            try {
-                BlackBoxCore.get().onAfterMainApplicationAttach(this, base)
-            } catch (e: Exception) {
-                Log.e("App", "Error in onAfterMainApplicationAttach: ${e.message}")
-            }
-        } catch (e: Exception) {
-            Log.e("App", "Critical error in attachBaseContext: ${e.message}")
-            // Ensure we still set the context even if other initialization fails
-            if (base != null) {
-                mContext = base
-            }
-        }
+        // The core installed its own handler during attach; make ours the outermost again.
+        CrashRecorder.install(base)
     }
 
     override fun onCreate() {
-        try {
-            super.onCreate()
-            AppManager.doOnCreate(mContext)
-        } catch (e: Exception) {
-            Log.e("App", "Error in onCreate: ${e.message}")
-        }
+        super.onCreate()
+        guarded("onCreate") { AppManager.doOnCreate(mContext) }
+        CrashRecorder.install(mContext)
     }
 }
