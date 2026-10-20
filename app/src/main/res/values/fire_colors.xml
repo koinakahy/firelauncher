@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="fire_bg">#0A0406</color>
+    <color name="fire_surface">#17090C</color>
+    <color name="fire_surface2">#220D11</color>
+    <color name="fire_red">#E3141F</color>
+    <color name="fire_red_dark">#8E0A12</color>
+    <color name="fire_orange">#FF6A1A</color>
+    <color name="fire_text">#FFFFFF</color>
+    <color name="fire_muted">#B08A8C</color>
+</resources>

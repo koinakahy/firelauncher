@@ -1,0 +1,19 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "keys": {
+      "$key": {
+        ".read": true,
+        "activatedAt": {
+          ".write": "!data.exists() && newData.exists() && newData.val() == now"
+        },
+        "devices": {
+          "$slot": {
+            ".write": "!data.exists() && newData.isString() && newData.val().length == 32 && ($slot == 's1' || ($slot == 's2' && root.child('keys/' + $key + '/maxDevices').val() >= 2) || ($slot == 's3' && root.child('keys/' + $key + '/maxDevices').val() >= 3) || ($slot == 's4' && root.child('keys/' + $key + '/maxDevices').val() >= 4) || ($slot == 's5' && root.child('keys/' + $key + '/maxDevices').val() >= 5))"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/bg_screen" android:orientation="vertical"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
+        <ImageView android:layout_width="44dp" android:layout_height="44dp"
+            android:src="@drawable/launcher_logo" android:contentDescription="logo"/>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:layout_marginStart="12dp" android:orientation="vertical">
+            <TextView android:id="@+id/tvBrand" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textColor="@color/fire_text"
+                android:textSize="20sp" android:textStyle="bold" android:letterSpacing="0.1"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Premium game launcher" android:textColor="@color/fire_muted" android:textSize="12sp"/>
+        </LinearLayout>
+    </LinearLayout>
+    <View android:layout_width="match_parent" android:layout_height="2dp" android:background="@drawable/bg_header_line"/>
+
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+
+        <!-- GAMES -->
+        <ScrollView android:id="@+id/tabGames" android:layout_width="match_parent" android:layout_height="match_parent">
+            <LinearLayout android:id="@+id/gamesList" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp"/>
+        </ScrollView>
+
+        <!-- MEMBERSHIP -->
+        <ScrollView android:id="@+id/tabMembership" android:visibility="gone"
+            android:layout_width="match_parent" android:layout_height="match_parent">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card" android:gravity="center_horizontal"
+                    android:orientation="vertical" android:padding="24dp">
+                    <TextView android:id="@+id/tvPlanStatus" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:textColor="@color/fire_orange"
+                        android:textSize="13sp" android:textStyle="bold" android:letterSpacing="0.15"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp" android:text="TIME LEFT"
+                        android:textColor="@color/fire_muted" android:textSize="12sp"/>
+                    <TextView android:id="@+id/tvTimeLeft" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:layout_marginTop="4dp"
+                        android:textColor="@color/fire_text" android:textSize="26sp" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvExpiry" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                        android:textColor="@color/fire_muted" android:textSize="13sp"/>
+                    <TextView android:id="@+id/tvKeyMasked" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:layout_marginTop="16dp"
+                        android:textColor="@color/fire_text" android:textSize="14sp"
+                        android:fontFamily="monospace"/>
+                </LinearLayout>
+                <Button android:id="@+id/btnRedeem" style="@style/FireButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp" android:text="Enter / Redeem Key"/>
+                <Button android:id="@+id/btnLogout" style="@style/FireButtonOutline"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp" android:text="Remove key from device"/>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- SELLER -->
+        <ScrollView android:id="@+id/tabSeller" android:visibility="gone"
+            android:layout_width="match_parent" android:layout_height="match_parent">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card" android:orientation="vertical" android:padding="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Get a key" android:textColor="@color/fire_text"
+                        android:textSize="18sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp" android:textColor="@color/fire_muted" android:textSize="14sp"
+                        android:text="Buy a key from the seller or join the channel for giveaways."/>
+                </LinearLayout>
+                <Button android:id="@+id/btnBuyKey" style="@style/FireButton"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp" android:text="Buy a key"/>
+                <Button android:id="@+id/btnGiveaway" style="@style/FireButtonOutline"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp" android:text="Giveaway channel"/>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- SETTINGS -->
+        <ScrollView android:id="@+id/tabSettings" android:visibility="gone"
+            android:layout_width="match_parent" android:layout_height="match_parent">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="16dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card" android:orientation="vertical" android:padding="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Google login" android:textColor="@color/fire_text"
+                        android:textSize="16sp" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvGoogleState" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:layout_marginTop="4dp"
+                        android:textColor="@color/fire_muted" android:textSize="13sp"/>
+                    <Button android:id="@+id/btnGoogle" style="@style/FireButton"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"/>
+                </LinearLayout>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp" android:background="@drawable/bg_card"
+                    android:orientation="vertical" android:padding="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Floating logo permission" android:textColor="@color/fire_text"
+                        android:textSize="16sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp" android:textColor="@color/fire_muted" android:textSize="13sp"
+                        android:text="Allow display over other apps to see the success popup and side logo."/>
+                    <Button android:id="@+id/btnOverlay" style="@style/FireButtonOutline"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp" android:text="Grant permission"/>
+                </LinearLayout>
+                <TextView android:id="@+id/tvDeviceId" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:layout_marginTop="16dp"
+                    android:textColor="@color/fire_muted" android:textSize="12sp"
+                    android:fontFamily="monospace"/>
+            </LinearLayout>
+        </ScrollView>
+    </FrameLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="@color/fire_surface" app:menu="@menu/launcher_nav"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        app:itemIconTint="@color/nav_tint" app:itemTextColor="@color/nav_tint"
+        app:labelVisibilityMode="labeled" app:itemRippleColor="@color/fire_red_dark"
+        app:itemActiveIndicatorStyle="@null"/>
+</LinearLayout>

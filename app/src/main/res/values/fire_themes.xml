@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Fire" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/fire_red</item>
+        <item name="colorPrimaryVariant">@color/fire_red_dark</item>
+        <item name="colorOnPrimary">@color/fire_text</item>
+        <item name="colorSecondary">@color/fire_orange</item>
+        <item name="android:windowBackground">@color/fire_bg</item>
+        <item name="android:statusBarColor">@color/fire_bg</item>
+        <item name="android:navigationBarColor">@color/fire_surface</item>
+        <item name="android:textColorPrimary">@color/fire_text</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+    </style>
+    <style name="FireDialog" parent="Theme.MaterialComponents.Dialog.Alert">
+        <item name="colorPrimary">@color/fire_red</item>
+        <item name="colorSecondary">@color/fire_orange</item>
+        <item name="android:colorBackground">@color/fire_surface2</item>
+        <item name="android:textColorPrimary">@color/fire_text</item>
+        <item name="android:textColorSecondary">@color/fire_muted</item>
+        <item name="buttonBarPositiveButtonStyle">@style/FireDialogBtn</item>
+        <item name="buttonBarNegativeButtonStyle">@style/FireDialogBtn</item>
+    </style>
+    <style name="FireDialogBtn" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/fire_orange</item>
+    </style>
+    <style name="FireButton" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:background">@drawable/bg_btn_fire</item>
+        <item name="android:textColor">@color/fire_text</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+    <style name="FireButtonOutline" parent="FireButton">
+        <item name="android:background">@drawable/bg_btn_outline</item>
+    </style>
+</resources>
