@@ -16,5 +16,4 @@
 .externalNativeBuild
 .cxx
 local.properties
-/app/release/keys_import.json
-fire-key.json
+/app/release/

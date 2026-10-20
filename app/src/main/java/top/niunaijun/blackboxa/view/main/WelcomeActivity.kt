@@ -17,8 +17,40 @@ class WelcomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val crash = java.io.File(filesDir, "crash.txt")
+        if (crash.exists()) {
+            showCrash(crash)
+            return
+        }
         previewInstalledAppList()
         jump()
+    }
+
+    private fun showCrash(file: java.io.File) {
+        val text = runCatching { file.readText() }.getOrDefault("(unreadable)").take(6000)
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val tv = android.widget.TextView(this).apply {
+            this.text = text; setTextIsSelectable(true); textSize = 11f
+            setTextColor(0xFFFFFFFF.toInt()); setPadding(pad, pad, pad, pad)
+        }
+        val copy = android.widget.Button(this).apply {
+            this.text = "Copy error"
+            setOnClickListener {
+                (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                    .setPrimaryClip(android.content.ClipData.newPlainText("crash", text))
+            }
+        }
+        val go = android.widget.Button(this).apply {
+            this.text = "Clear and continue"
+            setOnClickListener { file.delete(); previewInstalledAppList(); jump() }
+        }
+        val col = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setBackgroundColor(0xFF0A0406.toInt())
+            addView(copy); addView(go)
+            addView(android.widget.ScrollView(this@WelcomeActivity).apply { addView(tv) })
+        }
+        setContentView(col)
     }
 
     private fun jump() {

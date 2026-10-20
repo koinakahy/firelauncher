@@ -26,9 +26,25 @@ class App : Application() {
         }
     }
 
+    private fun installCrashRecorder(base: Context?) {
+        try {
+            val dir = base?.filesDir ?: return
+            val prev = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler { t, e ->
+                try {
+                    java.io.File(dir, "crash.txt").writeText(
+                        "Thread: ${t.name}\n" + Log.getStackTraceString(e)
+                    )
+                } catch (_: Throwable) { }
+                prev?.uncaughtException(t, e)
+            }
+        } catch (_: Throwable) { }
+    }
+
     override fun attachBaseContext(base: Context?) {
         try {
             super.attachBaseContext(base)
+            installCrashRecorder(base)
 
             // Initialize BlackBoxCore with error handling
             try {
